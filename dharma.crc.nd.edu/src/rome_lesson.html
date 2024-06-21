@@ -1,0 +1,1233 @@
+<!doctype html>
+<html lang="en">
+
+<!-- Mirrored from dharma.crc.nd.edu/src/rome_lesson.html by HTTrack Website Copier/3.x [XR&CO'2014], Mon, 06 May 2024 15:09:55 GMT -->
+<!-- Added by HTTrack --><meta http-equiv="content-type" content="text/html;charset=UTF-8" /><!-- /Added by HTTrack -->
+<head>
+	<meta charset="utf-8">
+	<meta name="description" content="">
+	<meta name="author" content="">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+	<title>Potree Viewer</title>
+
+	<link rel="stylesheet" type="text/css" href="../libs/potree/potree.css">
+	<link rel="stylesheet" type="text/css" href="../libs/jquery-ui/jquery-ui.min.css">
+	<link rel="stylesheet" type="text/css" href="../libs/openlayers3/ol.css">
+	<link rel="stylesheet" type="text/css" href="../libs/spectrum/spectrum.css">
+	<link rel="stylesheet" type="text/css" href="../libs/jstree/themes/mixed/style.css">
+	<link rel="stylesheet" type="text/css" href="../libs/Cesium/Widgets/CesiumWidget/CesiumWidget.css">
+
+	<!-- click annotations go into lesson, all text on one slider, as you click annotations move to new photos -->
+
+	<style>
+
+		/* 
+		!important
+		inline
+		#id
+		.class
+		element
+
+		.class#id {}
+
+		#id {}
+
+		element.class {
+			font-family: Garamond,Baskerville,Baskerville Old Face,Hoefler Text,Times New Roman,serif;
+		}
+
+		.class {}
+
+		element {
+			font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+		} 
+		*/
+		
+
+
+
+		div.annotation {
+			opacity: 1 !important;
+		}
+		div.annotation-titlebar {
+			background-color: white;
+			color: black;
+			/* opacity: 1 !important; */
+			/* css is gross, stay away as much as possible */
+		}
+		.popup {
+			position: fixed;
+			top: 5%;
+			right: 5%;
+			width: 20%;
+			z-index: 10000;
+			background-color: rgba(255, 255, 255, 0.8);
+			padding: 10px;
+			border-radius: 10px;
+			visibility: hidden;
+			font-size: 20px;
+			font-family: Garamond,Baskerville,Baskerville Old Face,Hoefler Text,Times New Roman,serif;
+			/* garmond */
+		}
+		.credits {
+			position: fixed;
+			bottom:0px;
+			left: 0px;
+			z-index: 10000;
+			width: 100%;
+			padding: 5px;
+			display: flex;
+			justify-content: space-between;
+		}
+		.logo {
+			width: 15%;
+		}
+		.button {
+			background-color: #d37243;
+			border-radius: 10px;
+			margin: 10px;
+			text-decoration: none;
+			text-align: center;
+			display: inline-block;
+			font-size: 24px;
+			padding: 5px;
+			color: black;
+		}
+		.lesson {
+			position: fixed;
+			top: 5%;
+			right: 5%;
+			width: 20%;
+			z-index: 9000;
+			background-color: rgba(255, 255, 255, 0.8);
+			padding: 10px;
+			border-radius: 10px;
+			visibility: hidden;
+			font-size: 20px;
+			font-family: Garamond,Baskerville,Baskerville Old Face,Hoefler Text,Times New Roman,serif;
+			/* garmond */
+		}
+			
+		#potree_toolbar{
+			position: absolute; 
+			z-index: 10000; 
+			left: 5px; 
+			top: 0px;
+			background: black;
+			color: white;
+			padding: 0.3em 0.8em;
+			font-family: "system-ui";
+			border-radius: 0em 0em 0.3em 0.3em;
+			display: flex;
+			flex-direction: row;
+		}
+
+		.potree_menu_toggle {
+			z-index: 0;
+			display: none;
+		}
+
+		.potree_toolbar_label{
+			text-align: center;
+			font-size: smaller;
+			opacity: 0.9;
+		}
+
+		.potree_toolbar_separator{
+			background: white;
+			padding: 0px;
+			margin: 5px 10px;
+			width: 1px;
+		}
+	</style>
+
+
+</head>
+
+<body>
+	<script src="../libs/jquery/jquery-3.1.1.min.js"></script>
+	<script src="../libs/spectrum/spectrum.js"></script>
+	<script src="../libs/jquery-ui/jquery-ui.min.js"></script>
+	<script src="../libs/other/BinaryHeap.js"></script>
+	<script src="../libs/tween/tween.min.js"></script>
+	<script src="../libs/d3/d3.js"></script>
+	<script src="../libs/proj4/proj4.js"></script>
+	<script src="../libs/openlayers3/ol.js"></script>
+	<script src="../libs/i18next/i18next.js"></script>
+	<script src="../libs/jstree/jstree.js"></script>
+	<script src="../libs/potree/potree.js"></script>
+	<script src="../libs/plasio/js/laslaz.js"></script>
+	<!-- <script src="../libs/Cesium/Cesium.js"></script> -->
+
+	
+	<!-- INCLUDE ADDITIONAL DEPENDENCIES HERE -->
+	<!-- INCLUDE SETTINGS HERE -->
+	
+	<div class="potree_container" style="position: absolute; width: 100%; height: 100%; left: 0px; top: 0px; ">
+		<div id="potree_render_area" style="background-image: url(%27/libs/potree/resources/images/background.html);">
+			<div id="potree_toolbar">
+			</div>
+			<div id="cesiumContainer" style="position: absolute; width: 100%; height: 100%; background-color:green"></div>
+
+		</div>
+		<div id="potree_sidebar_container"> </div>
+
+		<!-- <div id="ctrl" class="lesson">
+			<button class="button">Back</button>
+			<button class="button">Continue</button>
+		</div> -->
+
+		<!-- Temple of Saturn -->
+		<div class="lesson" id="tosLesson">
+			One of the oldest temples in the Forum is that of Saturn. Saturn and Cybele were central to the hierarchy of gods and goddess of Roman religion. Cybele is a significant figure in the Greek tradition and could be seen as an important tradition to the Roman history. History presents Saturn and Cybele as siblings, as partners and as mother and child relations in various times of the mythological writings.  
+			At the side of temple of Saturn is a fallen part of the cornice deal of the temple. The temple housed the public treasury and the orders of the senate. The temple of Saturn may have borne the name of its then ruler T. Larcius.  
+		</div>
+		<div id="tosCornice" class="popup" style="left: 2%; top: 10%; width: 25%;">
+			<img src="../resources/images/rome/tosCornice.jpg" style="width: 100%;">
+		</div>
+		<div id="tosArch" class="popup" style="left: 2%; top: 10%;">
+			<img src="../resources/images/rome/tosArch.jpg" style="width: 100%;">
+		</div>
+
+		<!-- Temple of Vespasian and Titus -->
+		<div class="lesson" id="tovatLesson">
+			The Temple of Vespasian is placed on a significant site along the western end of the Roman Forum at the beginning of the ascent of the the Clivus Capitolinus. Described as “one of the highest achievements of Imperial Rome,” the Temple of Vespasian and Titus along the southwest side of the Roman Forum represents a level of grace and refinement that arguably exceeded any other period of ancient Roman architecture.  
+			The construction of the temple near the end of the first century CE represents a time when the Roman Empire was at its limit, paralleled by the belief in the divine nature of the emperors as shown by posthumous deification. The eventual onset of Christianity and decline of Imperial Rome into the Middle Ages saw the abandonment and slow dismantling of the temple to its present state of only three columns. Despite a renewed interest in the characteristics of the temple during the Renaissance, it was not until the 19th century that the excavation of the temple allowed for its restoration and preservation. Although modern archaeology has allowed for a widely accepted reconstruction of the Temple as it would have looked at the height of the Roman Empire, many details concerning the design of the temple remain unknown and can only be reconstructed with educated hypotheses.
+		</div>
+		<div id="tovatCapital" class="popup" style="left: 2%; top: 10%;">
+			<img src="../resources/images/rome/tovat.jpg" style="width: 100%;">
+		</div>
+
+		<!-- Temple of Septimius Severus -->
+		<div class="lesson" id="aossLesson">
+			Les of the honorific arches built in the Forum, it was erected to celebrate emperor Septimius Severus&#39; victories in the Eastern provinces Its dedication is inscribed along the two panels above the arch.  The via sacra runs through the central arch leading up to the Capitoline; a set of stairs gave passage through the lateral arches.
+			Rich figural reliefs decorate the facades: barbarian prisoners escorted by Roman soldiers; Mars, on the keystone facing the Capitoline; winged victories holding trophies in the central archway. Above the side arches episodes of the emperor&#39;s two military campaigns.  Historic sources tell us that at the top of the monument were statues of Septimius Severus and his two sons, Caracalla and Geta on a four-hourse chariot led by soldiers. 
+		</div>
+		<div id="aossArch" class="popup" style="left: 2%; top: 10%; width: 25%; padding: 25px 5px 25px 5px;">
+			<img src="../resources/images/rome/aossArch.html" style="width: 100%; transform: rotate(90deg);">
+		</div>
+		<div id="aossFigure" class="popup" style="left: 2%; top: 10%;">
+			<img src="../resources/images/rome/aossFigure.html" style="width: 100%;">
+		</div>
+
+		<div class="credits">
+			<div class="logo">
+				<a href="https://www.google.com/url?q=https://dharma3d.org/&amp;source=gmail-imap&amp;ust=1646262702000000&amp;usg=AOvVaw3mD5yiM9b7u91M1gzyNrJa" target="_blank">
+					<img src="../resources/images/DHARMA_logo_long.png" style="width: 100%;">
+				</a>
+			</div>
+			
+			<div style="background-color: rgba(255, 255, 255, 0.5); padding: 3px;" class="logo">
+				<img src="../resources/logo_small.png">
+			</div>
+		</div>
+
+
+
+	</div>
+
+
+
+	
+	<script type="module">
+
+	import * as THREE from "../libs/three.js/build/three.module.js";
+	import { PLYLoader } from "../libs/three.js/loaders/PLYLoader.js";
+
+	let resourcePath = '../resources';
+
+	window.viewer = new Potree.Viewer(document.getElementById("potree_render_area"));
+		const loader = new PLYLoader();
+
+	const elToolbar = $("#potree_toolbar");
+	elToolbar.html(`
+		<span>
+			<div class="potree_toolbar_label">
+				View
+			</div>
+			<div>
+				<img title="toggle mesh" name="action_mesh" src="${resourcePath}/icons/triangle.svg" class="annotation-action-icon" style="width: 2em; height: auto;"/>
+				<img title="toggle reconstructions" name="action_recon" src="${resourcePath}/icons/navigation_cube.svg" class="annotation-action-icon" style="width: 2em; height: auto;"/>
+				<img title="toggle pointcloud" name="action_point" src="${resourcePath}/icons/rgb.svg" class="annotation-action-icon" style="width: 2em; height: auto;"/>
+			</div>
+		</span>
+
+		<span class="potree_toolbar_separator" />
+
+		<span>
+			<div class="potree_toolbar_label">
+				Measure
+			</div>
+			<div>
+				<img title="press esc to clear all measurements" name="action_measure_point" src="${resourcePath}/icons/point.svg" class="annotation-action-icon" style="width: 2em; height: auto;"/>
+				<img title="press esc to clear all measurements" name="action_measure_distance" src="${resourcePath}/icons/distance.svg" class="annotation-action-icon" style="width: 2em; height: auto;"/>
+			</div>
+		</span>
+
+		<span class="potree_toolbar_separator" />
+
+		<span>
+			<div class="potree_toolbar_label" style="width: 12em">
+				Lessons
+			</div>
+			<div>
+				<select id="optLesson" name="optLesson">
+					<option value="Temple of Vesta"> Temple of Vesta </option>
+					<option name="tos" value="Temple of Saturn"> Temple of Saturn </option>
+					<option value="Temple of Vespasian and Titus"> Temple of Vespasian and Titus </option>
+				</select>
+			</div>
+		</span>
+
+		<span class="potree_toolbar_separator" />
+
+		<span>
+			<div class="potree_toolbar_label">
+				Quality
+			</div>
+			<div>
+				<selectgroup id="quality_options"
+					<fieldset style="border:none; margin: 0px; padding: 0px;">
+						<legend></legend>
+						<span style="display:flex">
+							<span style="flex-grow: 1; display: inherit">	
+								<label for="quality_options_low" class="ui-button ui-state-default" style="width: 100%; padding: 0.4em 0.1em; margin: 0px; border-radius: 4px 0px 0px 4px; border-top: 1px solid black; border-right: 1px solid black; border-bottom: 1px solid black; border-left: none; border-image: initial;">Low</label>
+								<input type="radio" name="background_options" id="quality_options_low" value="low" style="display: none">
+							</span>
+							<span style="flex-grow: 1; display: inherit">
+								<label for="quality_options_med" class="ui-button ui-state-default ui-state-active" style="width: 100%; padding: 0.4em 0.1em; margin: 0px; border-radius: 0px; border-top: 1px solid black; border-right: 1px solid black; border-bottom: 1px solid black; border-left: none; border-image: initial;">Medium</label>
+								<input type="radio" name="background_options" id="quality_options_med" value="med" style="display: none">
+
+							</span>
+							<span style="flex-grow: 1; display: inherit">
+								<label for="quality_options_high" class="ui-button ui-state-default " style="width: 100%; padding: 0.4em 0.1em; margin: 0px; border-radius: 0px 4px 4px 0px; border-top: 1px solid black; border-right: 1px solid black; border-bottom: 1px solid black; border-left: none; border-image: initial;">High</label>
+								<input type="radio" name="background_options" id="quality_options_high" value="high" style="display: none">
+							</span>
+						</span>
+					</fieldset>
+				</selectgroup>
+			</div>
+		</span>
+	`);
+
+
+	// CONTENT & ACTIONS
+
+	{
+		document.getElementById("quality_options_high").addEventListener("click", (el) => {
+			elToolbar.find("label[for=quality_options_med]").removeClass("ui-state-active");
+			elToolbar.find("label[for=quality_options_high]").addClass("ui-state-active");
+			viewer.setPointBudget(10_000_000);
+		});
+
+	}
+
+	// LESSONS
+	{
+		elToolbar.find("select[name=optLesson]").on('change', (e) => {
+			console.log(e.value)
+			// lesson(tracker);
+		});
+	}
+
+
+	{ // ATTRIBUTE
+		elToolbar.find("img[name=action_point]").click( () => {
+			console.log(viewer.scene);
+			viewer.scene.pointclouds.forEach( pc => pc.visible = !pc.visible
+			);
+		});
+
+
+		elToolbar.find("img[name=action_recon]").click( () => {
+			viewer.scene.scene.children.forEach( rc => {
+				if(rc.name.includes('recon') && selector == rc.name.split(" ")[0]) {
+					if(rc.name.includes('reconline')) {
+							console.log(rc)
+							rc.material.color.setHex(0x4d3319);
+						}
+					rc.visible = !rc.visible; 
+					
+				}
+			});
+		});
+
+		elToolbar.find("img[name=action_mesh]").click( () => {
+			console.log("mesh");
+			viewer.scene.scene.children.forEach( ms => {
+				console.log(ms.name.split(' ')[0]);
+				if (ms.name &&  ms.name.split(' ')[0] == selector) {
+					console.log(ms.name.split())
+					console.log(ms.name.split().length)
+					
+					if (ms.name.includes('reconline') || ms.name.split(' ').length == 1) {
+						ms.visible = !ms.visible;
+						if(ms.name.includes('reconline')) {
+							console.log(ms)
+							ms.material.color.setHex(0xecd9c6);
+						}
+					}
+				}
+
+			});
+		});
+	}
+
+	{ // GRADIENT
+		const schemes = Object.keys(Potree.Gradients).map(name => ({name: name, values: Potree.Gradients[name]}));
+		const elGradientSchemes = elToolbar.find("span[name=gradient_schemes]");
+
+		for(const scheme of schemes){
+			const elButton = $(`
+				<span style=""></span>
+			`);
+
+			const svg = Potree.Utils.createSvgGradient(scheme.values);
+			svg.setAttributeNS(null, "class", `button-icon`);
+			svg.style.height = "2em";
+			svg.style.width = "1.3em";
+
+			elButton.append($(svg));
+
+			elButton.click( () => {
+				for(const pointcloud of viewer.scene.pointclouds){
+					pointcloud.material.activeAttributeName = "elevation";
+					pointcloud.material.gradient = Potree.Gradients[scheme.name];
+				}
+			});
+
+			elGradientSchemes.append(elButton);
+		}
+	}
+
+	{ // MEASURE
+		elToolbar.find("img[name=action_measure_point]").click( () => {
+			const measurement = viewer.measuringTool.startInsertion({
+				showDistances: false,
+				showAngles: false,
+				showCoordinates: true,
+				showArea: false,
+				closed: true,
+				maxMarkers: 1,
+				name: 'Point'
+			});
+		});
+
+		elToolbar.find("img[name=action_measure_distance]").click( () => {
+			const measurement = viewer.measuringTool.startInsertion({
+				showDistances: true,
+				showArea: false,
+				closed: false,
+				name: 'Distance'
+			});
+		});
+
+		elToolbar.find("img[name=action_measure_circle]").click( () => {
+			const measurement = viewer.measuringTool.startInsertion({
+				showDistances: false,
+				showHeight: false,
+				showArea: false,
+				showCircle: true,
+				showEdges: false,
+				closed: false,
+				maxMarkers: 3,
+				name: 'Circle'
+			});
+		});
+	}
+
+
+
+	{ // MATERIAL
+		let options = [
+			"rgba", 
+			"elevation",
+			"level of detail",
+			"indices",
+			// "intensity",
+			// "classification",
+			// "source id",
+		];
+
+		let attributeSelection = elToolbar.find('#optMaterial');
+		for(let option of options){
+			let elOption = $(`<option>${option}</option>`);
+			attributeSelection.append(elOption);
+		}
+
+		const updateMaterialSelection = (event, ui) => {
+			let selectedValue = attributeSelection.selectmenu().val();
+
+			for(const pointcloud of viewer.scene.pointclouds){
+				pointcloud.material.activeAttributeName = selectedValue;
+			}
+		};
+
+		attributeSelection.selectmenu({change: updateMaterialSelection});
+	}
+
+	{ // POINT BUDGET
+		elToolbar.find('#sldPointBudget').slider({
+			value: viewer.getPointBudget(),
+			min: 100_000,
+			max: 1_000_000,
+			step: 100_000,
+			slide: (event, ui) => { viewer.setPointBudget(ui.value); }
+		});
+
+		const onBudgetChange = () => {
+			let budget = (viewer.getPointBudget() / (1000_000)).toFixed(1) + "M";
+			elToolbar.find('span[name=lblPointBudget]').html(budget);
+		};
+
+		onBudgetChange();
+		viewer.addEventListener("point_budget_changed", onBudgetChange);
+	}
+	
+		viewer.setEDLEnabled(true);
+		viewer.setFOV(60);
+		viewer.setPointBudget(1_000_000);
+		viewer.loadSettingsFromURL();
+		viewer.useHQ = true;
+	
+		let selector = null;
+		
+		// Lights
+		let directionalLight, pointLight, ambientLight, hemiLight;
+
+		hemiLight = new THREE.HemisphereLight(0xffeeb1, 0x080820, 2);
+		viewer.scene.scene.add(hemiLight);
+
+		viewer.pRenderer.threeRenderer.toneMapping = THREE.ReinhardToneMapping;
+		viewer.pRenderer.threeRenderer.toneMappingExposure = 2.3;
+		viewer.pRenderer.threeRenderer.shadowMap.enabled = true;
+
+		pointLight = new THREE.SpotLight(0xffa95c, 4);
+		pointLight.castShadow = true;
+		pointLight.shadow.bias = -0.0001;
+		pointLight.shadow.mapSize.width = 1024*4;
+		pointLight.shadow.mapSize.height = 1024*4;
+		viewer.scene.scene.add(pointLight);
+
+		viewer.scene.view.position.set(43,140,80);
+		viewer.scene.view.lookAt(new THREE.Vector3(-13,40,0));
+		
+		viewer.loadGUI(() => {
+			viewer.setLanguage('en');
+			$("#menu_appearance").next().show();
+			//viewer.toggleSidebar();
+		});
+
+		console.log(viewer)
+		
+		// Point Cloud
+		Potree.loadPointCloud("../pointclouds/PotP1W/metadata.json", "lion", function(e){
+			viewer.scene.addPointCloud(e.pointcloud);
+			
+			let material = e.pointcloud.material;
+			material.size = 1;
+			material.pointSizeType = Potree.PointSizeType.ATTENUATED;
+		});
+
+		window.addEventListener('dblclick', () => {
+			console.log("dbl clicked");
+			let popups = document.getElementsByClassName('popup');
+			for (let i = 0; i < popups.length; i++) {
+				popups[i].style.visibility = 'hidden';
+			}
+		})
+
+		// Root Annotation
+		let aRoot = viewer.scene.annotations;
+		
+		// Temple of Saturn Reconstruction and Annotations
+		loader.load(resourcePath + "/models/recon/tos2.ply", (geometry) => {
+
+			// Creating and Adding lines
+			const edges = new THREE.EdgesGeometry( geometry );
+			const line = new THREE.LineSegments( edges, new THREE.LineBasicMaterial( { color: 0x362311 } ) );
+
+			line.position.set(9.2, 30.5, -7);
+			line.rotation.set(0, 0, -Math.PI * .69) 
+			line.name = "tos reconline"
+			line.visible = false;
+			viewer.scene.scene.add( line );
+
+
+			// Creating Mesh
+			let mesh;
+			{
+				const material = new THREE.MeshStandardMaterial({
+					color: 0x6e6863,
+					roughness: 0.5,
+				});
+
+				mesh = new THREE.Mesh(geometry, material);
+				mesh.position.set(9.2, 30.5, -7);
+				mesh.rotation.set(0, 0, -Math.PI * .69) // 
+				mesh.visible = false;
+				mesh.name = "tos recon";
+
+				viewer.scene.scene.add(mesh);
+			}
+
+			viewer.onGUILoaded(() => {
+				// Add entries to object list in sidebar
+				let tree = $(`#jstree_scene`);
+				let parentNode = "other";
+
+				let meshID = tree.jstree('create_node', parentNode, {
+					"text": "Temple of Saturn Reconstruction",
+					"icon": `${resourcePath}/icons/triangle.svg`,
+					"data": geometry
+				},
+					"last", false, false);
+				tree.jstree(mesh.visible ? "check_node" : "uncheck_node", meshID);
+			});
+
+
+			// Annotations
+			let aTos = new Potree.Annotation({
+				title: "Temple of Saturn",
+				position: [6, 32, 18],
+				cameraPosition: [-38, 63, 13], // relative position
+				cameraTarget: [6, 32, 8],
+				collapseThreshold: 150, // inverse of radius (increase radius, decrease threshold)
+			});
+
+			aTos.addEventListener('click', () => {
+				selector = 'tos';
+
+				let lessons = document.getElementsByClassName('lesson');
+				for (let i = 0; i < lessons.length; i++) {
+					lessons[i].style.visibility = 'hidden';
+				}
+
+				let popups = document.getElementsByClassName('popup');
+				console.log(popups)
+				for (let i = 0; i < popups.length; i++) {
+					popups[i].style.visibility = 'hidden';
+				}
+
+				let lesson = document.getElementById('tosLesson');
+				lesson.style.visibility = 'visible';
+			})
+			aRoot.add(aTos);
+
+			let tosCornice = new Potree.Annotation({
+				title: "Fallen Cornice",
+				position: [18, 38, -8],
+				cameraPosition: [23, 47, -2],
+				cameraTarget: [18, 38, -12],
+				collapseThreshold: 500,
+			});
+			tosCornice.addEventListener('click', () => {
+				let popups = document.getElementsByClassName('popup');
+				console.log(popups)
+				for (let i = 0; i < popups.length; i++) {
+					popups[i].style.visibility = 'hidden';
+				}
+				let image = document.getElementById('tosCornice');
+				image.style.visibility = 'visible'; 
+				console.log(image)
+				image.addEventListener('click', () => {
+					if(image.style.width >= "40%") {
+						image.style.width = "25%";
+					}
+					else {
+						image.style.width = "50%";
+					}
+					image.style.height = "auto";
+					image.style.transition = "width 0.5s ease";
+				});
+			})
+			aTos.add(tosCornice);
+
+			let tosArch = new Potree.Annotation({
+				title: "Architrave Inscription",
+				position: [6, 32, 15],
+				cameraPosition: [-2, 39, 11],
+				cameraTarget: [6, 32, 12],
+				collapseThreshold: 1000
+			});
+			tosArch.addEventListener('click', () => {
+				let popups = document.getElementsByClassName('popup');
+				console.log(popups)
+				for (let i = 0; i < popups.length; i++) {
+					popups[i].style.visibility = 'hidden';
+				}
+				let image = document.getElementById('tosArch');
+				image.style.visibility = 'visible'; 
+				console.log(image)
+				image.addEventListener('click', () => {
+					if(image.style.width >= "50%") {
+						image.style.width = "25%";
+					}
+					else {
+						image.style.width = "80%";
+					}
+					image.style.height = "auto";
+					image.style.transition = "width 0.5s ease";
+				});
+			})
+			aTos.add(tosArch);
+		});
+
+		// Temple of Saturn
+		loader.load(resourcePath + "/models/tos.ply", (geometry) => {
+			const textureLoader = new THREE.TextureLoader();
+
+			const diffuseMap = textureLoader.load(resourcePath + "/models/tos_tex.jpg");
+			diffuseMap.encoding = THREE.sRGBEncoding;
+
+			const normalMap = textureLoader.load(resourcePath + "/models/tos_norm.jpg");
+			normalMap.encoding = THREE.sRGBEncoding;
+
+			const loader = new THREE.CubeTextureLoader();
+			const textureCube = loader.load( [ resourcePath + '/cube/posx.jpg', resourcePath + '/cube/negx.jpg', resourcePath + '/cube/posy.jpg', resourcePath + '/cube/negy.jpg', resourcePath + '/cube/posz.jpg', resourcePath + '/cube/negz.jpg' ] );
+			textureCube.encoding = THREE.sRGBEncoding;
+
+			geometry.computeVertexNormals();
+
+			let mesh;
+			{
+				const material = new THREE.MeshStandardMaterial({
+					color: 0xffffff,
+					roughness: 0.5,
+					map: diffuseMap,
+					normalMap: normalMap,
+					envMap: textureCube,
+					// normalMapType: THREE.ObjectSpaceNormalMap,
+				});
+				mesh = new THREE.Mesh(geometry, material);
+				mesh.position.set(9.2, 30.5, -7);
+				mesh.rotation.set(0, 0, -Math.PI * .69) // 
+				mesh.visible = false;
+				mesh.name = "tos";
+				mesh.traverse(n => {
+					if(n.isMesh) {
+						n.castShadow = true;
+						n.recieveShadow = true;
+						if(n.material.map) n.material.map.anisotropy = 16;
+					}
+				})
+
+				viewer.scene.scene.add(mesh);
+			}
+
+			viewer.onGUILoaded(() => {
+				// Add entries to object list in sidebar
+				let tree = $(`#jstree_scene`);
+				let parentNode = "other";
+
+				let meshID = tree.jstree('create_node', parentNode, {
+					"text": "Temple of Saturn",
+					"icon": `${resourcePath}/icons/triangle.svg`,
+					"data": geometry
+				},
+					"last", false, false);
+				tree.jstree(mesh.visible ? "check_node" : "uncheck_node", meshID);
+
+			});
+		});
+
+		// Temple of Vespasian and Titus Reconstruction and Annotations
+		loader.load(resourcePath + "/models/recon/tovat2.ply", (geometry) => {
+
+			// Creating and Adding lines
+			const edges = new THREE.EdgesGeometry( geometry );
+			const line = new THREE.LineSegments( edges, new THREE.LineBasicMaterial( { color: 0x362311 } ) );
+
+			line.position.set(-17.6, 20, -10.5);
+			line.rotation.set(0, 0, -Math.PI * 1.69) // 
+			line.name = "tovat reconline"
+			line.visible = false;
+			viewer.scene.scene.add( line );
+
+
+			// Creating Mesh
+			let mesh;
+			{
+				const material = new THREE.MeshStandardMaterial({
+					color: 0x6e6863,
+					roughness: 0.5,
+				});
+
+				mesh = new THREE.Mesh(geometry, material);
+				mesh.position.set(-17.6, 20, -10.5);
+				mesh.rotation.set(0, 0, -Math.PI * 1.69) //
+				mesh.visible = false;
+				mesh.name = "tovat recon";
+
+				viewer.scene.scene.add(mesh);
+			}
+
+			viewer.onGUILoaded(() => {
+				// Add entries to object list in sidebar
+				let tree = $(`#jstree_scene`);
+				let parentNode = "other";
+
+				let meshID = tree.jstree('create_node', parentNode, {
+					"text": "Temple of Vespasian and Titus Reconstruction",
+					"icon": `${resourcePath}/icons/triangle.svg`,
+					"data": geometry
+				},
+					"last", false, false);
+				tree.jstree(mesh.visible ? "check_node" : "uncheck_node", meshID);
+			});
+
+
+			// Annotations
+			let aTovat = new Potree.Annotation({
+				title: "Temple of Vespasian and Titus",
+				position: [-18, 22, 18],
+				cameraPosition: [0, 47, 13], // relative position
+				cameraTarget: [-18, 23, 4],
+				collapseThreshold: 50, // inverse of radius (increase radius, decrease threshold)
+			});
+
+			aTovat.addEventListener('click', () => {
+				selector = 'tovat';
+
+				let lessons = document.getElementsByClassName('lesson');
+				for (let i = 0; i < lessons.length; i++) {
+					lessons[i].style.visibility = 'hidden';
+				}
+
+				let popups = document.getElementsByClassName('popup');
+				console.log(popups)
+				for (let i = 0; i < popups.length; i++) {
+					popups[i].style.visibility = 'hidden';
+				}
+
+				let lesson = document.getElementById('tovatLesson');
+				lesson.style.visibility = 'visible';
+			})
+			aRoot.add(aTovat);
+
+			let tovatCapital = new Potree.Annotation({
+				title: "Capital",
+				position: [-18, 24, 13],
+				cameraPosition: [-14, 30, 12],
+				cameraTarget: [-18, 24, 11],
+				collapseThreshold: 500,
+			});
+			tovatCapital.addEventListener('click', () => {
+				let popups = document.getElementsByClassName('popup');
+				console.log(popups)
+				for (let i = 0; i < popups.length; i++) {
+					popups[i].style.visibility = 'hidden';
+				}
+				let image = document.getElementById('tovatCapital');
+				image.style.visibility = 'visible'; 
+				console.log(image)
+			})
+			aTovat.add(tovatCapital);
+		});
+
+		// Temple of Vespasian and Titus
+		loader.load(resourcePath + "/models/tovat.ply", (geometry) => {
+			const textureLoader = new THREE.TextureLoader();
+
+			const diffuseMap = textureLoader.load(resourcePath + "/models/tovat_tex.jpg");
+			diffuseMap.encoding = THREE.sRGBEncoding;
+
+			const normalMap = textureLoader.load(resourcePath + "/models/tovat_norm.jpg");
+			normalMap.encoding = THREE.sRGBEncoding;
+
+			const loader = new THREE.CubeTextureLoader();
+			const textureCube = loader.load( [ resourcePath + '/cube/posx.jpg', resourcePath + '/cube/negx.jpg', resourcePath + '/cube/posy.jpg', resourcePath + '/cube/negy.jpg', resourcePath + '/cube/posz.jpg', resourcePath + '/cube/negz.jpg' ] );
+			textureCube.encoding = THREE.sRGBEncoding;
+
+			geometry.computeVertexNormals();
+
+			let mesh;
+			{
+				const material = new THREE.MeshStandardMaterial({
+					color: 0xffffff,
+					roughness: 0.5,
+					map: diffuseMap,
+					normalMap: normalMap,
+					envMap: textureCube,
+					// normalMapType: THREE.ObjectSpaceNormalMap,
+				});
+				mesh = new THREE.Mesh(geometry, material);
+				mesh.position.set(-17.6, 20, -10.5);
+				mesh.rotation.set(0, 0, -Math.PI * 1.69) // 
+				mesh.visible = false;
+				mesh.name = "tovat";
+				mesh.traverse(n => {
+					if(n.isMesh) {
+						n.castShadow = true;
+						n.recieveShadow = true;
+						if(n.material.map) n.material.map.anisotropy = 16;
+					}
+				})
+
+				viewer.scene.scene.add(mesh);
+			}
+
+			viewer.onGUILoaded(() => {
+				// Add entries to object list in sidebar
+				let tree = $(`#jstree_scene`);
+				let parentNode = "other";
+
+				let meshID = tree.jstree('create_node', parentNode, {
+					"text": "Temple of Vespasian and Titus",
+					"icon": `${resourcePath}/icons/triangle.svg`,
+					"data": geometry
+				},
+					"last", false, false);
+				tree.jstree(mesh.visible ? "check_node" : "uncheck_node", meshID);
+
+			});
+		});
+
+
+		// Arch of Septimius Severus Reconstruction and Annotations
+		loader.load(resourcePath + "/models/recon/archss2.ply", (geometry) => {
+
+			// Creating and Adding lines
+			const edges = new THREE.EdgesGeometry( geometry );
+			const line = new THREE.LineSegments( edges, new THREE.LineBasicMaterial( { color: 0x362311 } ) );
+
+			line.position.set(-27, 76, -12);
+			line.rotation.set(0, 0, -Math.PI * 1.69) // 
+			line.name = "aoss reconline"
+			line.visible = false;
+			viewer.scene.scene.add( line );
+
+
+			// Creating Mesh
+			let mesh;
+			{
+				const material = new THREE.MeshStandardMaterial({
+					color: 0x6e6863,
+					roughness: 0.5,
+				});
+
+				mesh = new THREE.Mesh(geometry, material);
+				mesh.position.set(-27, 76, -12);
+				mesh.rotation.set(0, 0, -Math.PI * 1.69) //
+				mesh.visible = false;
+				mesh.name = "aoss recon";
+
+				viewer.scene.scene.add(mesh);
+			}
+
+			viewer.onGUILoaded(() => {
+				// Add entries to object list in sidebar
+				let tree = $(`#jstree_scene`);
+				let parentNode = "other";
+
+				let meshID = tree.jstree('create_node', parentNode, {
+					"text": "Arch of Septimius Severus Reconstruction",
+					"icon": `${resourcePath}/icons/triangle.svg`,
+					"data": geometry
+				},
+					"last", false, false);
+				tree.jstree(mesh.visible ? "check_node" : "uncheck_node", meshID);
+			});
+
+
+			// Annotations
+			let aAoss = new Potree.Annotation({
+				title: "Arch of Septimius Severus",
+				position: [-28, 76, 14],
+				cameraPosition: [-6, 108, 10], // relative position
+				cameraTarget: [-25, 76, 8],
+				collapseThreshold: 150, // inverse of radius (increase radius, decrease threshold)
+			});
+
+			aAoss.addEventListener('click', () => {
+				selector = 'aoss';
+
+				let lessons = document.getElementsByClassName('lesson');
+				for (let i = 0; i < lessons.length; i++) {
+					lessons[i].style.visibility = 'hidden';
+				}
+
+				let popups = document.getElementsByClassName('popup');
+				console.log(popups)
+				for (let i = 0; i < popups.length; i++) {
+					popups[i].style.visibility = 'hidden';
+				}
+
+				let lesson = document.getElementById('aossLesson');
+				lesson.style.visibility = 'visible';
+			})
+			aRoot.add(aAoss);
+
+			let aossArch = new Potree.Annotation({
+				title: "Arch",
+				position: [-28, 76, 2],
+				cameraPosition: [-28, 76, -8],
+				cameraTarget: [-28, 76, 2],
+				collapseThreshold: 500,
+			});
+			aossArch.addEventListener('click', () => {
+				let popups = document.getElementsByClassName('popup');
+				console.log(popups)
+				for (let i = 0; i < popups.length; i++) {
+					popups[i].style.visibility = 'hidden';
+				}
+				let image = document.getElementById('aossArch');
+				image.style.visibility = 'visible'; 
+				console.log(image)
+				image.addEventListener('click', () => {
+					if(image.style.width >= "30%") {
+						image.style.width = "25%";
+					}
+					else {
+						image.style.width = "35%";
+					}
+					image.style.height = "auto";
+					image.style.transition = "width 0.5s ease";
+				});
+			})
+			aAoss.add(aossArch);
+
+			let aossFigure = new Potree.Annotation({
+				title: "Figure",
+				position: [-21, 77, -5],
+				cameraPosition: [-16, 84, -2],
+				cameraTarget: [-21, 77, -7],
+				collapseThreshold: 500,
+			});
+			aossFigure.addEventListener('click', () => {
+				let popups = document.getElementsByClassName('popup');
+				console.log(popups)
+				for (let i = 0; i < popups.length; i++) {
+					popups[i].style.visibility = 'hidden';
+				}
+				let image = document.getElementById('aossFigure');
+				image.style.visibility = 'visible'; 
+				console.log(image)
+			})
+			aAoss.add(aossFigure);
+		});
+
+		// Arch of Septimius Severus
+		loader.load(resourcePath + "/models/aoss.ply", (geometry) => {
+			const textureLoader = new THREE.TextureLoader();
+
+			const diffuseMap = textureLoader.load(resourcePath + "/models/aoss_tex.jpg");
+			diffuseMap.encoding = THREE.sRGBEncoding;
+
+			const normalMap = textureLoader.load(resourcePath + "/models/aoss_norm.jpg");
+			normalMap.encoding = THREE.sRGBEncoding;
+
+			const loader = new THREE.CubeTextureLoader();
+			const textureCube = loader.load( [ resourcePath + '/cube/posx.jpg', resourcePath + '/cube/negx.jpg', resourcePath + '/cube/posy.jpg', resourcePath + '/cube/negy.jpg', resourcePath + '/cube/posz.jpg', resourcePath + '/cube/negz.jpg' ] );
+			textureCube.encoding = THREE.sRGBEncoding;
+
+			geometry.computeVertexNormals();
+
+			let mesh;
+			{
+				const material = new THREE.MeshStandardMaterial({
+					color: 0xffffff,
+					roughness: 0.5,
+					map: diffuseMap,
+					normalMap: normalMap,
+					envMap: textureCube,
+					// normalMapType: THREE.ObjectSpaceNormalMap,
+				});
+				mesh = new THREE.Mesh(geometry, material);
+				mesh.position.set(-27, 76, -12);
+				mesh.rotation.set(0, 0, -Math.PI * 1.69) // 
+				mesh.visible = false;
+				mesh.name = "aoss";
+				mesh.traverse(n => {
+					if(n.isMesh) {
+						n.castShadow = true;
+						n.recieveShadow = true;
+						if(n.material.map) n.material.map.anisotropy = 16;
+					}
+				})
+
+				viewer.scene.scene.add(mesh);
+			}
+
+			viewer.onGUILoaded(() => {
+				// Add entries to object list in sidebar
+				let tree = $(`#jstree_scene`);
+				let parentNode = "other";
+
+				let meshID = tree.jstree('create_node', parentNode, {
+					"text": "Arch of Septimius Severus",
+					"icon": `${resourcePath}/icons/triangle.svg`,
+					"data": geometry
+				},
+					"last", false, false);
+				tree.jstree(mesh.visible ? "check_node" : "uncheck_node", meshID);
+
+			});
+		});
+	
+
+
+		// Temple of Antoninus and Faustina
+		// loader.load(resourcePath + "/models/toaf.ply", (geometry) => {
+		// 	const textureLoader = new THREE.TextureLoader();
+
+		// 	const diffuseMap = textureLoader.load(resourcePath + "/models/toaf_tex.jpg");
+		// 	diffuseMap.encoding = THREE.sRGBEncoding;
+
+		// 	const normalMap = textureLoader.load(resourcePath + "/models/toaf_norm.jpg");
+		// 	normalMap.encoding = THREE.sRGBEncoding;
+
+		// 	const loader = new THREE.CubeTextureLoader();
+		// 	const textureCube = loader.load( [ resourcePath + '/cube/posx.jpg', resourcePath + '/cube/negx.jpg', resourcePath + '/cube/posy.jpg', resourcePath + '/cube/negy.jpg', resourcePath + '/cube/posz.jpg', resourcePath + '/cube/negz.jpg' ] );
+		// 	textureCube.encoding = THREE.sRGBEncoding;
+
+		// 	geometry.computeVertexNormals();
+
+		// 	let mesh;
+		// 	{
+		// 		const material = new THREE.MeshStandardMaterial({
+		// 			color: 0xffffff,
+		// 			roughness: 0.45,
+		// 			map: diffuseMap,
+		// 			normalMap: normalMap,
+		// 			envMap: textureCube,
+		// 			normalMapType: THREE.ObjectSpaceNormalMap,
+		// 		});
+		// 		mesh = new THREE.Mesh(geometry, material);
+		// 		mesh.position.set(48.5, 238.5, -13);
+		// 		mesh.rotation.set(0, 0, -Math.PI * .19);
+		// 		mesh.visible = false;
+		// 		mesh.name = 'toaf';
+
+		// 		viewer.scene.scene.add(mesh);
+		// 	}
+
+		// 	viewer.onGUILoaded(() => {
+		// 		// Add entries to object list in sidebar
+		// 		let tree = $(`#jstree_scene`);
+		// 		let parentNode = "other";
+
+		// 		let meshID = tree.jstree('create_node', parentNode, {
+		// 			"text": "Temple of Antoninus and Faustina",
+		// 			"icon": `${resourcePath}/icons/triangle.svg`,
+		// 			"data": geometry
+		// 		},
+		// 			"last", false, false);
+		// 		tree.jstree(mesh.visible ? "check_node" : "uncheck_node", meshID);
+
+		// 	});
+
+		// 	// Annotations
+		// 	let aToaf = new Potree.Annotation({
+		// 		title: "Temple of Antoninus and Faustina",
+		// 		position: [48.5, 238.5, 10],
+		// 		cameraPosition: [80, 220, 10],
+		// 		cameraTarget: [51, 236, 0],
+		// 		collapseThreshold: 150,
+
+		// 	});
+		// 	aToaf.addEventListener('click', () => {
+		// 		console.log(aToaf)
+		// 		console.log("hello world")
+		// 	})
+		// 	aRoot.add(aToaf);
+
+		// 	window.addEventListener('keydown', (key) => {
+		// 		console.log(key)
+		// 		if(key.code == "Escape") {
+		// 			viewer.scene.removeAllMeasurements();
+		// 		}
+		// 		console.log("key pressed");
+		// 	});
+
+		// 	let toafPillars = new Potree.Annotation({
+		// 		title: "Cool Pillars",
+		// 		position: [53, 224, -2],
+		// 		cameraPosition: [57, 221, -2],
+		// 		cameraTarget: [53, 224, -2],
+		// 	});
+		// 	aToaf.add(toafPillars);
+
+		// 	let toafStairs = new Potree.Annotation({
+		// 		title: "Old Stairs",
+		// 		position: [60, 230, -10],
+		// 		cameraPosition: [80, 220, 10],
+		// 		cameraTarget: [60, 230, -10],
+		// 	});
+		// 	aToaf.add(toafStairs);
+		// });
+
+		// Temple of Castor and Pollux
+		// loader.load(resourcePath + "/models/tocap.ply", (geometry) => {
+		// 	const textureLoader = new THREE.TextureLoader();
+
+		// 	const diffuseMap = textureLoader.load(resourcePath + "/models/tocap_tex.jpg");
+		// 	diffuseMap.encoding = THREE.sRGBEncoding;
+
+		// 	const normalMap = textureLoader.load(resourcePath + "/models/tocap_norm.jpg");
+		// 	normalMap.encoding = THREE.sRGBEncoding;
+
+		// 	const loader = new THREE.CubeTextureLoader();
+		// 	const textureCube = loader.load( [ resourcePath + '/cube/posx.jpg', resourcePath + '/cube/negx.jpg', resourcePath + '/cube/posy.jpg', resourcePath + '/cube/negy.jpg', resourcePath + '/cube/posz.jpg', resourcePath + '/cube/negz.jpg' ] );
+		// 	textureCube.encoding = THREE.sRGBEncoding;
+
+		// 	geometry.computeVertexNormals();
+
+		// 	let mesh;
+		// 	{
+		// 		const material = new THREE.MeshStandardMaterial({
+		// 			color: 0xffffff,
+		// 			roughness: 0.5,
+		// 			map: diffuseMap,
+		// 			normalMap: normalMap,
+		// 			envMap: textureCube,
+		// 			normalMapType: THREE.ObjectSpaceNormalMap,
+		// 		});
+		// 		mesh = new THREE.Mesh(geometry, material);
+		// 		mesh.position.set(104.3, 160.1, -13);
+		// 		mesh.rotation.set(0, 0, -Math.PI * .155) //
+		// 		mesh.visible = false;
+		// 		mesh.name = "tocap";
+
+		// 		viewer.scene.scene.add(mesh);
+		// 	}
+
+		// 	viewer.onGUILoaded(() => {
+		// 		// Add entries to object list in sidebar
+		// 		let tree = $(`#jstree_scene`);
+		// 		let parentNode = "other";
+
+		// 		let meshID = tree.jstree('create_node', parentNode, {
+		// 			"text": "Temple of Castor and Pollux",
+		// 			"icon": `${resourcePath}/icons/triangle.svg`,
+		// 			"data": geometry
+		// 		},
+		// 			"last", false, false);
+		// 		tree.jstree(mesh.visible ? "check_node" : "uncheck_node", meshID);
+
+		// 	});
+		// });
+
+		function loop(timestamp){
+			requestAnimationFrame(loop);
+
+			viewer.update(viewer.clock.getDelta(), timestamp);
+
+			viewer.render();
+
+			pointLight.position.set(
+				viewer.scene.cameraP.position.x + 10,
+				viewer.scene.cameraP.position.y + 10,
+				viewer.scene.cameraP.position.z + 10
+			);
+		}
+
+		requestAnimationFrame(loop);
+	
+	</script>
+	
+	
+  </body>
+
+<!-- Mirrored from dharma.crc.nd.edu/src/rome_lesson.html by HTTrack Website Copier/3.x [XR&CO'2014], Mon, 06 May 2024 15:10:21 GMT -->
+</html>
